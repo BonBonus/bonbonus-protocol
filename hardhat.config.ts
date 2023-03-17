@@ -56,7 +56,7 @@ export default {
       accounts: [`0x${PRIVATE_KEY}`],
     },
   },
-  bscscan: {
+  etherscan: {
     apiKey: BSCSCAN_API_KEY,
   },
   typechain: {

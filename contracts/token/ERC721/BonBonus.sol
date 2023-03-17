@@ -10,8 +10,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/Base64Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/cryptography/SignatureCheckerUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 
 import "../../interfaces/IBonBonus.sol";
 import "../../interfaces/IERC4906.sol";
@@ -40,6 +38,7 @@ IERC4906
     mapping(uint256 => TokenData) public tokens;
     mapping(bytes32 => Provider) public providers;
 
+
     /**
      * @dev Roles definitions
      */
@@ -66,10 +65,15 @@ IERC4906
         _grantRole(UPGRADER_ROLE, msg.sender);
     }
 
-    function safeMint(address to) public onlyRole(MINTER_ROLE) {
+    function safeMint(address to, uint256 birthday) public onlyRole(MINTER_ROLE) {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
         _safeMint(to, tokenId);
+
+        tokens[tokenId].exists = true;
+        tokens[tokenId].isProvider = false;
+        tokens[tokenId].birthday = birthday;
+        tokens[tokenId].score = 0;
     }
 
 
@@ -85,6 +89,12 @@ IERC4906
     internal
     override(ERC721Upgradeable, ERC721EnumerableUpgradeable)
     {
+        require(
+            from == address(0) ||
+            to == address(0),
+            "This a SBT token. It can't be transferred."
+        );
+
         super._beforeTokenTransfer(from, to, tokenId, batchSize);
     }
 
