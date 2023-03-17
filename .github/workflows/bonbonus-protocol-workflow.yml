@@ -1,0 +1,36 @@
+name: BonBonus Protocol workflow
+on: [ push ]
+
+jobs:
+  Test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'yarn'
+      - name: Install Dependencies
+        run: yarn
+      - name: Make envfile
+        uses: SpicyPizza/create-envfile@v1.3
+        with:
+          envkey_DEBUG: false
+          envkey_NETWORK: "local"
+          envkey_API_URL: "https://data-seed-prebsc-2-s2.binance.org:8545"
+          envkey_PRIVATE_KEY: ${{ secrets.TEST_ACCOUNT_PRIVATE_KEY }}
+          envkey_BSCSCAN_API_KEY: "test"
+          file_name: .env
+      - name: Build
+        run: yarn build
+
+      - name: Linter check
+        run: yarn lint
+
+      - name: Run Slither
+        uses: crytic/slither-action@v0.2.0
+        id: slither
+        with:
+          node-version: 18
+          fail-on: none
