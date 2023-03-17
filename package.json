@@ -24,13 +24,21 @@
     "@typechain/hardhat": "^6.1.2",
     "@types/chai": "^4.2.0",
     "@types/mocha": ">=9.1.0",
+    "@typescript-eslint/eslint-plugin": "^5.54.1",
+    "@typescript-eslint/parser": "^5.54.1",
     "@types/node": ">=12.0.0",
     "chai": "^4.3.7",
+    "eslint": "^8.35.0",
+    "eslint-config-prettier": "^8.7.0",
+    "eslint-plugin-prettier": "^4.2.1",
     "ethereum-waffle": "^4.0.10",
     "ethers": "^5.7.2",
     "hardhat": "^2.13.0",
     "hardhat-gas-reporter": "^1.0.8",
-    "solidity-coverage": "^0.8.0",
+    "solc": "^0.8.19",
+    "solhint": "^3.4.0",
+    "solidity-coverage": "^0.8.2",
+    "solidity-docgen": "^0.6.0-beta.35",
     "ts-node": ">=8.0.0",
     "typechain": "^8.1.0",
     "typescript": "^4.9.5"
@@ -44,6 +52,12 @@
   "scripts": {
     "prebuild": "rimraf dist && hardhat clean",
     "build": "hardhat compile && tsc",
-    "test": "hardhat test test/all.test.ts"
+    "test": "hardhat test test/all.test.ts",
+    "lint:js": "eslint .",
+    "lint:js:fix": "eslint . --fix",
+    "lint:sol": "solhint \"contracts/**/*.sol\"",
+    "lint:sol:fix": "solhint \"contracts/**/*.sol\" --fix",
+    "lint": "yarn run lint:js && yarn run lint:sol",
+    "lint:fix": "yarn run lint:js:fix && yarn run lint:sol:fix"
   }
 }
