@@ -65,6 +65,15 @@ contract BonBonus is
         address to,
         uint256 birthday
     ) public onlyRole(MINTER_ROLE) {
+        require(
+            birthday < block.timestamp,
+            "ERC721Metadata: Invalid date"
+        );
+        require(
+           balanceOf(to) == 0,
+            "User already have token"
+        );
+
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
         _safeMint(to, tokenId);
