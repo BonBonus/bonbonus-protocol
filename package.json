@@ -1,5 +1,6 @@
 {
-  "version": "0.0.23",
+  "name": "@bonbonus/bonbonus-protocol",
+  "version": "0.0.2",
   "description": "The project contains the development environment and the source code of the BonBonus protocol",
   "main": "dist/types/index.js",
   "types": "dist/types/index.d.ts",

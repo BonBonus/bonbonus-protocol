@@ -28,6 +28,7 @@ contract BonBonus is
     using StringsUpgradeable for uint256;
 
     CountersUpgradeable.Counter private _tokenIdCounter;
+    CountersUpgradeable.Counter private _providerIdCounter;
 
     string private externalURL;
 
@@ -73,15 +74,15 @@ contract BonBonus is
     }
 
     function addNewProvider(
-        uint256 _provider,
         uint256 _providerType,
         address[] memory _trustedAddreses
     ) external onlyRole(OPERATOR_ROLE) {
-        require(!providers[_provider].exists, "Provider already exist");
+        uint256 providerId = _providerIdCounter.current();
+        _providerIdCounter.increment();
 
-        providers[_provider].exists = true;
-        providers[_provider].providerType = _providerType;
-        providers[_provider].trustedAddresses = _trustedAddreses;
+        providers[providerId].exists = true;
+        providers[providerId].providerType = _providerType;
+        providers[providerId].trustedAddresses = _trustedAddreses;
     }
 
     function getProviderTrustedAddresses(
