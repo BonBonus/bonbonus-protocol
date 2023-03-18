@@ -4,27 +4,22 @@ pragma solidity ^0.8.9;
 interface IBonBonus {
     struct Provider {
         bool exists;
-        bool active;
         uint256 providerType;
         address[] trustedAddresses;
     }
 
     struct TokenData {
         bool exists;
-        bool isProvider;
-        uint256 score;
+        uint256 finalRating;
+        uint256 ratingUpdatedDate;
         uint256 birthday;
-        mapping(bytes32 => ProviderData) providerData;
+        mapping(uint256 => TokenProviderData) providerData;
     }
 
-    struct ProviderData {
+    struct TokenProviderData {
         bool exists;
-        uint256 score;
-    }
-
-    struct Score {
-        bool exists;
-        bytes32 provider;
-        uint256 score;
+        uint256 finalRating;
+        uint256 loyaltyPoints;
+        uint256[] ratings;
     }
 }

@@ -1,0 +1,5 @@
+export enum DevContractsAddresses {
+  BONBONUS = '',
+  BONBONUS_CALCULATE_GLOBAL_SCORE = '',
+  BONBONUS_CALCULATE_PROVIDER_SCORE = '',
+}

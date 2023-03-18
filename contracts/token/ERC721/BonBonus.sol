@@ -14,19 +14,16 @@ import "@openzeppelin/contracts-upgradeable/utils/Base64Upgradeable.sol";
 import "../../interfaces/IBonBonus.sol";
 import "../../interfaces/IERC4906.sol";
 
-
-/// @custom:security-contact security@pistis.network
 contract BonBonus is
-IBonBonus,
-Initializable,
-ERC721Upgradeable,
-ERC721EnumerableUpgradeable,
-ERC721BurnableUpgradeable,
-AccessControlUpgradeable,
-UUPSUpgradeable,
-IERC4906
+    IBonBonus,
+    Initializable,
+    ERC721Upgradeable,
+    ERC721EnumerableUpgradeable,
+    ERC721BurnableUpgradeable,
+    AccessControlUpgradeable,
+    UUPSUpgradeable,
+    IERC4906
 {
-
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using StringsUpgradeable for uint256;
 
@@ -34,17 +31,15 @@ IERC4906
 
     string private externalURL;
 
-
+    mapping(uint256 => Provider) public providers;
     mapping(uint256 => TokenData) public tokens;
-    mapping(bytes32 => Provider) public providers;
-
 
     /**
      * @dev Roles definitions
      */
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-    bytes32 public constant CONTRACT_ROLE = keccak256("CONTRACT_ROLE");
+    bytes32 public constant ORACLE_ROLE = keccak256("ORACLE_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -65,54 +60,191 @@ IERC4906
         _grantRole(UPGRADER_ROLE, msg.sender);
     }
 
-    function safeMint(address to, uint256 birthday) public onlyRole(MINTER_ROLE) {
+    function safeMint(
+        address to,
+        uint256 birthday
+    ) public onlyRole(MINTER_ROLE) {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
         _safeMint(to, tokenId);
 
         tokens[tokenId].exists = true;
-        tokens[tokenId].isProvider = false;
         tokens[tokenId].birthday = birthday;
-        tokens[tokenId].score = 0;
     }
 
+    function addNewProvider(
+        uint256 _provider,
+        uint256 _providerType,
+        address[] memory _trustedAddreses
+    ) external onlyRole(OPERATOR_ROLE) {
+        require(!providers[_provider].exists, "Provider already exist");
 
-    function _authorizeUpgrade(address newImplementation)
-    internal
-    override
-    onlyRole(UPGRADER_ROLE)
-    {}
+        providers[_provider].exists = true;
+        providers[_provider].providerType = _providerType;
+        providers[_provider].trustedAddresses = _trustedAddreses;
+    }
+
+    function getProviderTrustedAddresses(
+        uint256 _provider
+    ) public view returns (address[] memory) {
+        require(providers[_provider].exists, "Provider doesn't exist");
+
+        return providers[_provider].trustedAddresses;
+    }
+
+    function getTokenProviderData(
+        uint256 _tokenId,
+        uint256 _provider
+    ) public view returns (TokenProviderData memory) {
+        require(_exists(_tokenId), "ERC721Metadata: The token doesn't exist");
+        require(providers[_provider].exists, "Provider doesn't exist");
+
+        return tokens[_tokenId].providerData[_provider];
+    }
+
+    function getTokenProviderRating(
+        uint256 _tokenId,
+        uint256 _provider
+    ) public view returns (uint256[] memory) {
+        require(_exists(_tokenId), "ERC721Metadata: The token doesn't exist");
+        require(providers[_provider].exists, "Provider doesn't exist");
+
+        return tokens[_tokenId].providerData[_provider].ratings;
+    }
+
+    function getTokenProviderLoyaltyPoints(
+        uint256 _tokenId,
+        uint256 _provider
+    ) public view returns (uint256) {
+        require(_exists(_tokenId), "ERC721Metadata: The token doesn't exist");
+        require(providers[_provider].exists, "Provider doesn't exist");
+
+        return tokens[_tokenId].providerData[_provider].loyaltyPoints;
+    }
+
+    function addNewTokenPointByProvider(
+        uint256 _tokenId,
+        uint256 _provider,
+        uint256 _points
+    ) external {
+        require(_exists(_tokenId), "ERC721Metadata: The token doesn't exist");
+        require(providers[_provider].exists, "Provider doesn't exist");
+        require(_points >= 1 && _points <= 5, "Incorrect points amount"); // add checking on integer
+
+        bool flag = false;
+
+        for (uint256 i; i < providers[_provider].trustedAddresses.length; i++) {
+            if (providers[_provider].trustedAddresses[i] == msg.sender) {
+                flag = true;
+            }
+        }
+
+        require(flag, "Sender not in trusted addresses");
+
+        tokens[_tokenId].providerData[_provider].exists = true;
+        tokens[_tokenId].providerData[_provider].ratings.push(_points);
+    }
+
+    function updateTokenLoyaltyPointsByProvider(
+        uint256 _tokenId,
+        uint256 _provider,
+        uint256 _points
+    ) external {
+        require(_exists(_tokenId), "ERC721Metadata: The token doesn't exist");
+        require(providers[_provider].exists, "Provider doesn't exist");
+
+        bool flag = false;
+
+        for (uint256 i; i < providers[_provider].trustedAddresses.length; i++) {
+            if (providers[_provider].trustedAddresses[i] == msg.sender) {
+                flag = true;
+            }
+        }
+
+        require(flag, "Sender not in trusted addresses");
+
+        tokens[_tokenId].providerData[_provider].exists = true;
+        tokens[_tokenId].providerData[_provider].loyaltyPoints = _points;
+    }
+
+    function updateGlobalRating(
+        uint256 _token,
+        uint256 _globalRating
+    ) external onlyRole(ORACLE_ROLE) {
+        require(
+            checkTokenExists(_token),
+            "ERC721Metadata: The token doesn't exist"
+        );
+
+        tokens[_token].finalRating = _globalRating;
+        tokens[_token].ratingUpdatedDate = block.timestamp;
+
+        emit MetadataUpdate(_token);
+    }
+
+    function updateProviderRating(
+        uint256 _token,
+        uint256 _provider,
+        uint256 _providerRating
+    ) external onlyRole(ORACLE_ROLE) {
+        require(
+            checkTokenExists(_token),
+            "ERC721Metadata: The token doesn't exist"
+        );
+        require(
+            checkProviderExists(_provider),
+            "Provider doesnt exist"
+        );
+
+        tokens[_token].providerData[_provider].exists = true;
+        tokens[_token].providerData[_provider].finalRating = _providerRating;
+
+        emit MetadataUpdate(_token);
+    }
+
+    function checkTokenExists(uint256 _token) public view returns (bool) {
+        return _exists(_token);
+    }
+
+    function checkProviderExists(uint256 _provider) public view returns (bool) {
+        return providers[_provider].exists;
+    }
+
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyRole(UPGRADER_ROLE) {}
 
     // The following functions are overrides required by Solidity.
 
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize)
-    internal
-    override(ERC721Upgradeable, ERC721EnumerableUpgradeable)
-    {
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId,
+        uint256 batchSize
+    ) internal override(ERC721Upgradeable, ERC721EnumerableUpgradeable) {
         require(
-            from == address(0) ||
-            to == address(0),
+            from == address(0) || to == address(0),
             "This a SBT token. It can't be transferred."
         );
 
         super._beforeTokenTransfer(from, to, tokenId, batchSize);
     }
 
-    function supportsInterface(bytes4 interfaceId)
-    public
-    view
-    override(
-    ERC721Upgradeable,
-    ERC721EnumerableUpgradeable,
-    AccessControlUpgradeable,
-    IERC165Upgradeable
+    function supportsInterface(
+        bytes4 interfaceId
     )
-    returns (bool)
+        public
+        view
+        override(
+            ERC721Upgradeable,
+            ERC721EnumerableUpgradeable,
+            AccessControlUpgradeable,
+            IERC165Upgradeable
+        )
+        returns (bool)
     {
         return
-        interfaceId == bytes4(0x49064906) ||
-        super.supportsInterface(interfaceId);
+            interfaceId == bytes4(0x49064906) ||
+            super.supportsInterface(interfaceId);
     }
-
 }
-

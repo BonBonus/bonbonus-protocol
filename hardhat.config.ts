@@ -27,10 +27,46 @@ export default {
           },
         },
       },
+      {
+        version: '0.7.6',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
     ],
     overrides: {
       'contracts/token/ERC721/BonBonus.sol': {
         version: '0.8.19',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+      'contracts/finance/CalculateGlobalRating.sol': {
+        version: '0.8.19',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+      'contracts/finance/CalculateProviderRating.sol': {
+        version: '0.8.19',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+      'contracts/oracle/Operator.sol': {
+        version: '0.7.6',
         settings: {
           optimizer: {
             enabled: true,
