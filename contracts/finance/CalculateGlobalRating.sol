@@ -35,7 +35,7 @@ contract CalculateGlobalRating is
         );
 
         Chainlink.Request memory req = buildChainlinkRequest(
-            "f085d338da1e451b9a206f3081b4130a", // job id
+            "d7a6e9257779464da1440eb5deea8fa0", // job id
             address(this),
             this.fulfillMultipleParameters.selector
         );

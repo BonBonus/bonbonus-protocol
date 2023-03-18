@@ -10,7 +10,7 @@ interface IBonBonus {
 
     struct TokenData {
         bool exists;
-        uint256 finalRating;
+        uint256 globalRating;
         uint256 ratingUpdatedDate;
         uint256 birthday;
         mapping(uint256 => TokenProviderData) providerData;

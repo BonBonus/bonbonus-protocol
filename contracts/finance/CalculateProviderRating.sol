@@ -41,7 +41,7 @@ contract CalculateProviderRating is
         );
 
         Chainlink.Request memory req = buildChainlinkRequest(
-            "0dd24835d29a4094976e1f457ccc53a9", // job id
+            "dda63b140044433fa793942b3d050069", // job id
             address(this),
             this.fulfillMultipleParameters.selector
         );

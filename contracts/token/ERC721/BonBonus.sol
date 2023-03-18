@@ -38,7 +38,6 @@ contract BonBonus is
     /**
      * @dev Roles definitions
      */
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     bytes32 public constant ORACLE_ROLE = keccak256("ORACLE_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
@@ -56,7 +55,6 @@ contract BonBonus is
         __UUPSUpgradeable_init();
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(MINTER_ROLE, msg.sender);
         _grantRole(OPERATOR_ROLE, msg.sender);
         _grantRole(UPGRADER_ROLE, msg.sender);
     }
@@ -64,7 +62,7 @@ contract BonBonus is
     function safeMint(
         address to,
         uint256 birthday
-    ) public onlyRole(MINTER_ROLE) {
+    ) public {
         require(
             birthday < block.timestamp,
             "ERC721Metadata: Invalid date"
@@ -197,7 +195,7 @@ contract BonBonus is
             "ERC721Metadata: The token doesn't exist"
         );
 
-        tokens[_token].finalRating = _globalRating;
+        tokens[_token].globalRating = _globalRating;
         tokens[_token].ratingUpdatedDate = block.timestamp;
 
         emit MetadataUpdate(_token);
