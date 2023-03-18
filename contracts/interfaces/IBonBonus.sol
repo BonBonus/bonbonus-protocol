@@ -14,6 +14,7 @@ interface IBonBonus {
         uint256 ratingUpdatedDate;
         uint256 birthday;
         mapping(uint256 => TokenProviderData) providerData;
+        uint256[] participatingProviders;
     }
 
     struct TokenProviderData {

@@ -34,6 +34,7 @@ contract BonBonus is
 
     mapping(uint256 => Provider) public providers;
     mapping(uint256 => TokenData) public tokens;
+    mapping(address => uint256[]) private addressProviders;
 
     /**
      * @dev Roles definitions
@@ -82,14 +83,18 @@ contract BonBonus is
 
     function addNewProvider(
         uint256 _providerType,
-        address[] memory _trustedAddreses
+        address[] memory trustedAddreses
     ) external onlyRole(OPERATOR_ROLE) {
         uint256 providerId = _providerIdCounter.current();
         _providerIdCounter.increment();
 
         providers[providerId].exists = true;
         providers[providerId].providerType = _providerType;
-        providers[providerId].trustedAddresses = _trustedAddreses;
+        providers[providerId].trustedAddresses = trustedAddreses;
+
+        for (uint256 i; i < trustedAddreses.length; i++) {
+            addressProviders[trustedAddreses[i]].push(providerId);
+        }
     }
 
     function getProviderTrustedAddresses(
@@ -98,6 +103,13 @@ contract BonBonus is
         require(providers[_provider].exists, "Provider doesn't exist");
 
         return providers[_provider].trustedAddresses;
+    }
+
+    function getAddressProviders(
+        address _wallet
+    ) public view returns (uint256[] memory) {
+
+        return addressProviders[_wallet];
     }
 
     function getTokenProviderData(
@@ -118,6 +130,14 @@ contract BonBonus is
         require(providers[_provider].exists, "Provider doesn't exist");
 
         return tokens[_tokenId].providerData[_provider].ratings;
+    }
+
+    function getTokenParticipatingProviders(
+        uint256 _tokenId
+    ) public view returns (uint256[] memory) {
+        require(_exists(_tokenId), "ERC721Metadata: The token doesn't exist");
+
+        return tokens[_tokenId].participatingProviders;
     }
 
 
@@ -162,6 +182,18 @@ contract BonBonus is
 
         tokens[_tokenId].providerData[_provider].exists = true;
         tokens[_tokenId].providerData[_provider].ratings.push(_points);
+
+        bool providerFlag = false;
+
+        for (uint256 i; i < tokens[_tokenId].participatingProviders.length; i++) {
+            if (tokens[_tokenId].participatingProviders[i] == _provider) {
+                providerFlag = true;
+            }
+        }
+
+        if (!providerFlag) {
+            tokens[_tokenId].participatingProviders.push(_provider);
+        }
     }
 
     function updateTokenLoyaltyPointsByProvider(
