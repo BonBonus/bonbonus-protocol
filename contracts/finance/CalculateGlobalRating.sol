@@ -2,7 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
-import "@chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "../interfaces/ICalculateGlobalRating.sol";
@@ -11,7 +11,7 @@ import "../token/ERC721/BonBonus.sol";
 contract CalculateGlobalRating is
     ICalculateGlobalRating,
     ChainlinkClient,
-    ConfirmedOwner
+    AccessControl
 {
     using Chainlink for Chainlink.Request;
 
@@ -19,16 +19,20 @@ contract CalculateGlobalRating is
 
     mapping(bytes32 => RequestStatus) public s_requests;
 
-    constructor(BonBonus _bonBonus) ConfirmedOwner(msg.sender) {
+    bytes32 public constant CONTRACT_ROLE = keccak256("CONTRACT_ROLE");
+
+    constructor(BonBonus _bonBonus) {
         setChainlinkToken(0x84b9B910527Ad5C03A9Ca831909E21e236EA7b06);
         setChainlinkOracle(0x71eDDb50c79bA241B0469bb0Ae08E4f8F7dca45E);
 
         bonBonus = _bonBonus;
+
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     function calculateGlobalTokenRating(
         uint256 _token
-    ) public returns (bytes32 requestId) {
+    ) external onlyRole(CONTRACT_ROLE) returns (bytes32 requestId) {
         require(
             bonBonus.checkTokenExists(_token),
             "ERC721Metadata: The token doesn't exist"
@@ -72,7 +76,7 @@ contract CalculateGlobalRating is
         );
     }
 
-    function withdrawLink() public onlyOwner {
+    function withdrawLink() public onlyRole(DEFAULT_ADMIN_ROLE) {
         LinkTokenInterface link = LinkTokenInterface(chainlinkTokenAddress());
         require(
             link.transfer(msg.sender, link.balanceOf(address(this))),

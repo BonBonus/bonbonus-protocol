@@ -40,6 +40,7 @@ contract BonBonus is
      * @dev Roles definitions
      */
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+    bytes32 public constant CONTRACT_ROLE = keccak256("CONTRACT_ROLE");
     bytes32 public constant ORACLE_ROLE = keccak256("ORACLE_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
 
@@ -165,7 +166,7 @@ contract BonBonus is
         uint256 _tokenId,
         uint256 _provider,
         uint256 _points
-    ) external {
+    ) external onlyRole(CONTRACT_ROLE) {
         require(_exists(_tokenId), "ERC721Metadata: The token doesn't exist");
         require(providers[_provider].exists, "Provider doesn't exist");
         require(_points >= 1 && _points <= 5, "Incorrect points amount"); // add checking on integer
