@@ -112,7 +112,7 @@ contract BonBonus is
         return tokens[_tokenId].providerData[_provider];
     }
 
-    function getTokenProviderRating(
+    function getTokenProviderRatings(
         uint256 _tokenId,
         uint256 _provider
     ) public view returns (uint256[] memory) {
@@ -120,6 +120,17 @@ contract BonBonus is
         require(providers[_provider].exists, "Provider doesn't exist");
 
         return tokens[_tokenId].providerData[_provider].ratings;
+    }
+
+
+    function getTokenProviderFinalRating(
+        uint256 _tokenId,
+        uint256 _provider
+    ) public view returns (uint256) {
+        require(_exists(_tokenId), "ERC721Metadata: The token doesn't exist");
+        require(providers[_provider].exists, "Provider doesn't exist");
+
+        return tokens[_tokenId].providerData[_provider].finalRating;
     }
 
     function getTokenProviderLoyaltyPoints(
