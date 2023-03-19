@@ -3,6 +3,7 @@ import '@openzeppelin/hardhat-upgrades';
 import '@nomiclabs/hardhat-etherscan';
 import '@typechain/hardhat';
 import 'solidity-coverage';
+import 'solidity-docgen';
 import 'dotenv/config';
 
 const { NETWORK, API_URL, PRIVATE_KEY, BSCSCAN_API_KEY } = process.env;

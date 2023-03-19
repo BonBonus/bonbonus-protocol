@@ -1,10 +1,19 @@
 import { ethers, upgrades, run } from 'hardhat';
 
+import { DevLinks } from '../../../../arguments/development/consts';
+
 async function main() {
   const BonBonusFactory = await ethers.getContractFactory('BonBonus');
-  const bonBonus = await upgrades.deployProxy(BonBonusFactory, {
-    kind: 'uups',
-  });
+  const bonBonus = await upgrades.deployProxy(
+    BonBonusFactory,
+    [
+      DevLinks.BONBONUS_TOKEN_CONTRACT_URI,
+      DevLinks.BONBONUS_TOKEN_IMAGE_RENDER,
+    ],
+    {
+      kind: 'uups',
+    },
+  );
 
   await bonBonus.deployed();
   console.log('BonBonus -> deployed to address:', bonBonus.address);
