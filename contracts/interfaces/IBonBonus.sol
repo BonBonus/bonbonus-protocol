@@ -5,7 +5,7 @@ interface IBonBonus {
     struct Provider {
         bool exists;
         uint256 providerType;
-        address[] trustedAddresses;
+        address trustedAddress;
     }
 
     struct TokenData {

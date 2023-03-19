@@ -40,7 +40,6 @@ contract BonBonus is
      * @dev Roles definitions
      */
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-    bytes32 public constant CONTRACT_ROLE = keccak256("CONTRACT_ROLE");
     bytes32 public constant ORACLE_ROLE = keccak256("ORACLE_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
 
@@ -84,26 +83,24 @@ contract BonBonus is
 
     function addNewProvider(
         uint256 _providerType,
-        address[] memory trustedAddreses
+        address trustedAddress
     ) external onlyRole(OPERATOR_ROLE) {
         uint256 providerId = _providerIdCounter.current();
         _providerIdCounter.increment();
 
         providers[providerId].exists = true;
         providers[providerId].providerType = _providerType;
-        providers[providerId].trustedAddresses = trustedAddreses;
+        providers[providerId].trustedAddress = trustedAddress;
 
-        for (uint256 i; i < trustedAddreses.length; i++) {
-            addressProviders[trustedAddreses[i]].push(providerId);
-        }
+        addressProviders[trustedAddress].push(providerId);
     }
 
     function getProviderTrustedAddresses(
         uint256 _provider
-    ) public view returns (address[] memory) {
+    ) public view returns (address) {
         require(providers[_provider].exists, "Provider doesn't exist");
 
-        return providers[_provider].trustedAddresses;
+        return providers[_provider].trustedAddress;
     }
 
     function getAddressProviders(
@@ -166,20 +163,10 @@ contract BonBonus is
         uint256 _tokenId,
         uint256 _provider,
         uint256 _points
-    ) external onlyRole(CONTRACT_ROLE) {
+    ) external onlyRole(ORACLE_ROLE) {
         require(_exists(_tokenId), "ERC721Metadata: The token doesn't exist");
         require(providers[_provider].exists, "Provider doesn't exist");
         require(_points >= 1 && _points <= 5, "Incorrect points amount"); // add checking on integer
-
-        bool flag = false;
-
-        for (uint256 i; i < providers[_provider].trustedAddresses.length; i++) {
-            if (providers[_provider].trustedAddresses[i] == msg.sender) {
-                flag = true;
-            }
-        }
-
-        require(flag, "Sender not in trusted addresses");
 
         tokens[_tokenId].providerData[_provider].exists = true;
         tokens[_tokenId].providerData[_provider].ratings.push(_points);
@@ -205,39 +192,17 @@ contract BonBonus is
         require(_exists(_tokenId), "ERC721Metadata: The token doesn't exist");
         require(providers[_provider].exists, "Provider doesn't exist");
 
-        bool flag = false;
-
-        for (uint256 i; i < providers[_provider].trustedAddresses.length; i++) {
-            if (providers[_provider].trustedAddresses[i] == msg.sender) {
-                flag = true;
-            }
-        }
-
-        require(flag, "Sender not in trusted addresses");
+        require(providers[_provider].trustedAddress == msg.sender, "Sender not in trusted addresses");
 
         tokens[_tokenId].providerData[_provider].exists = true;
         tokens[_tokenId].providerData[_provider].loyaltyPoints = _points;
     }
 
-    function updateGlobalRating(
-        uint256 _token,
-        uint256 _globalRating
-    ) external onlyRole(ORACLE_ROLE) {
-        require(
-            checkTokenExists(_token),
-            "ERC721Metadata: The token doesn't exist"
-        );
-
-        tokens[_token].globalRating = _globalRating;
-        tokens[_token].ratingUpdatedDate = block.timestamp;
-
-        emit MetadataUpdate(_token);
-    }
-
-    function updateProviderRating(
+    function updateTokenRating(
         uint256 _token,
         uint256 _provider,
-        uint256 _providerRating
+        uint256 _providerRating,
+        uint256 _globalRating
     ) external onlyRole(ORACLE_ROLE) {
         require(
             checkTokenExists(_token),
@@ -250,6 +215,8 @@ contract BonBonus is
 
         tokens[_token].providerData[_provider].exists = true;
         tokens[_token].providerData[_provider].finalRating = _providerRating;
+        tokens[_token].globalRating = _globalRating;
+        tokens[_token].ratingUpdatedDate = block.timestamp;
 
         emit MetadataUpdate(_token);
     }

@@ -2,47 +2,52 @@
 pragma solidity ^0.8.9;
 
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-import "../interfaces/ICalculateProviderRating.sol";
 import "../token/ERC721/BonBonus.sol";
 
-contract CalculateProviderRating is
-    ICalculateProviderRating,
-    ChainlinkClient,
-    AccessControl
+contract CalculateTokenRating is
+ChainlinkClient,
+Ownable
 {
     using Chainlink for Chainlink.Request;
 
     BonBonus public bonBonus;
 
-    mapping(bytes32 => RequestStatus) public s_requests;
+    struct RequestStatus {
+        bool fulfilled;
+        uint256 token;
+        uint256 provider;
+        uint256 providerRating;
+        uint256 globalRating;
+    }
 
-    bytes32 public constant CONTRACT_ROLE = keccak256("CONTRACT_ROLE");
+    event RatingUpdated(
+        bytes32 requestId,
+        uint256 token,
+        uint256 provider,
+        uint256 providerRating,
+        uint256 globalRating
+    );
+
+    mapping(bytes32 => RequestStatus) public s_requests;
 
     constructor(BonBonus _bonBonus) {
         setChainlinkToken(0x84b9B910527Ad5C03A9Ca831909E21e236EA7b06);
         setChainlinkOracle(0x71eDDb50c79bA241B0469bb0Ae08E4f8F7dca45E);
 
         bonBonus = _bonBonus;
-
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function calculateProviderTokenRating(
+    function updateTokenRating(
         uint256 _token,
-        uint256 _provider
-    ) external onlyRole(CONTRACT_ROLE) returns (bytes32 requestId)  {
-        require(
-            bonBonus.checkTokenExists(_token),
-            "ERC721Metadata: The token doesn't exist"
-        );
+        uint256 _provider,
+        uint256 _rating
+    ) external returns (bytes32 requestId)  {
+        require(bonBonus.getProviderTrustedAddresses(_provider) == msg.sender, "Sender not in trusted addresses");
 
-        require(
-            bonBonus.checkProviderExists(_provider),
-            "Provider doesn't exist"
-        );
+        bonBonus.addNewTokenPointByProvider(_token, _provider, _rating);
 
         Chainlink.Request memory req = buildChainlinkRequest(
             "dda63b140044433fa793942b3d050069", // job id
@@ -56,10 +61,11 @@ contract CalculateProviderRating is
         requestId = sendChainlinkRequest(req, 0);
 
         s_requests[requestId] = RequestStatus({
-            fulfilled: false,
-            token: _token,
-            provider: _provider,
-            providerRating: 0
+        fulfilled: false,
+        token: _token,
+        provider: _provider,
+        providerRating: 0,
+        globalRating: 0
         });
 
         return requestId;
@@ -67,26 +73,30 @@ contract CalculateProviderRating is
 
     function fulfillMultipleParameters(
         bytes32 requestId,
-        uint256 _providerRating
+        uint256 _providerRating,
+        uint256 _globalRating
     ) public recordChainlinkFulfillment(requestId) {
         s_requests[requestId].fulfilled = true;
         s_requests[requestId].providerRating = _providerRating;
+        s_requests[requestId].globalRating = _globalRating;
 
-        bonBonus.updateProviderRating(
+        bonBonus.updateTokenRating(
             s_requests[requestId].token,
             s_requests[requestId].provider,
-            _providerRating
+            _providerRating,
+            _globalRating
         );
 
         emit RatingUpdated(
             requestId,
             s_requests[requestId].token,
             s_requests[requestId].provider,
-            _providerRating
+            _providerRating,
+            _globalRating
         );
     }
 
-    function withdrawLink() public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function withdrawLink() public onlyOwner {
         LinkTokenInterface link = LinkTokenInterface(chainlinkTokenAddress());
         require(
             link.transfer(msg.sender, link.balanceOf(address(this))),

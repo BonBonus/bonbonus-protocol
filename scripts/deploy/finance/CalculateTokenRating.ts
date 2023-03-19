@@ -3,17 +3,17 @@ import hre from 'hardhat';
 import { DevContractsAddresses } from '../../../arguments/development/consts';
 
 async function main() {
-  const CalculateGlobalRatingFactory = await hre.ethers.getContractFactory(
-    'CalculateGlobalRating',
+  const CalculateTokenRatingFactory = await hre.ethers.getContractFactory(
+    'CalculateTokenRating',
   );
-  const calculateGlobalRating = await CalculateGlobalRatingFactory.deploy(
+  const calculateTokenRating = await CalculateTokenRatingFactory.deploy(
     DevContractsAddresses.BONBONUS,
   );
 
-  await calculateGlobalRating.deployed();
+  await calculateTokenRating.deployed();
   console.log(
-    'calculateGlobalRating -> deployed to address:',
-    calculateGlobalRating.address,
+    'calculateTokenRating -> deployed to address:',
+    calculateTokenRating.address,
   );
 
   if (process.env.NETWORK != 'local') {
@@ -24,7 +24,7 @@ async function main() {
     console.log('Verifying...\n');
 
     await hre.run('verify:verify', {
-      address: calculateGlobalRating.address,
+      address: calculateTokenRating.address,
       constructorArguments: [DevContractsAddresses.BONBONUS],
     });
   }

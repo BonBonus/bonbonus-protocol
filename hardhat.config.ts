@@ -47,16 +47,7 @@ export default {
           },
         },
       },
-      'contracts/finance/CalculateGlobalRating.sol': {
-        version: '0.8.19',
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-      'contracts/finance/CalculateProviderRating.sol': {
+      'contracts/finance/CalculateTokenRating.sol': {
         version: '0.8.19',
         settings: {
           optimizer: {
